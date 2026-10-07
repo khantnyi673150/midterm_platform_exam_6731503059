@@ -187,6 +187,17 @@ app.use(
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
+app.get('/api', (c) =>
+  c.json({
+    message: 'Campus Equipment Booking API',
+    endpoints: {
+      equipment: '/api/equipment',
+      bookings: '/api/bookings',
+      health: '/health',
+    },
+  }),
+);
+
 app.get('/api/equipment', async (c) => {
   await ensureSchema(c.env.midterm_campus_booking_2026_db);
   const rows = await fetchEquipment(c.env.midterm_campus_booking_2026_db);

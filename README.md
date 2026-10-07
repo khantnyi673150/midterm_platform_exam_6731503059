@@ -43,6 +43,8 @@ Key endpoints:
 
 ## Schema / ERD
 
+The same schema is also available in [erd.md](erd.md).
+
 ```text
 equipment
   - id (PK)
@@ -73,28 +75,33 @@ bookings
 
 ## Testing evidence
 
-The following five checks were performed against the local API at `http://localhost:8787/api`:
+The API was verified against the public deployment at:
 
-1. `GET /equipment` → returns the seeded equipment list with `200`.
-2. `POST /bookings` with valid payload → creates booking and returns `201`.
-3. `GET /bookings` → lists all bookings with `200`.
-4. `POST /bookings` with invalid time range `startAt >= endAt` → returns `400` and JSON error.
-5. `POST /bookings` with overlapping times on same equipment → returns `409` conflict.
-6. `GET /bookings/unknown-id` → returns `404` not found.
-7. `PATCH /bookings/:id` → updates booking data correctly.
-8. `DELETE /bookings/:id` → deletes booking and returns `204`.
+`https://knna-midterm-campus-booking-2026.quickbite-api.workers.dev/api`
 
-Sample `curl` commands:
+| Case | Request | Expected status | Result |
+|---|---|---:|---|
+| 1 | `GET /equipment` | 200 | Seeded equipment list returned |
+| 2 | `POST /bookings` valid payload | 201 | Booking created with `id` |
+| 3 | `GET /bookings` | 200 | Created booking listed |
+| 4 | `POST /bookings` invalid range | 400 | JSON error returned |
+| 5 | `POST /bookings` overlap | 409 | Conflict returned |
+| 6 | `GET /bookings/does-not-exist` | 404 | Not found returned |
+| 7 | `PATCH /bookings/:id` | 200 | Booking updated |
+| 8 | `DELETE /bookings/:id` | 204 | Booking deleted |
+
+Suggested test commands:
 
 ```bash
-curl http://localhost:8787/api/equipment
-curl -X POST http://localhost:8787/api/bookings \
+curl -sS -w "\nHTTP_STATUS:%{http_code}\n" https://knna-midterm-campus-booking-2026.quickbite-api.workers.dev/api/equipment
+
+curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -X POST https://knna-midterm-campus-booking-2026.quickbite-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
   -d '{"equipmentId":"eq-1","borrowerName":"Somchai Jaidee","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T11:00:00.000Z","purpose":"Class presentation"}'
-curl http://localhost:8787/api/bookings
-curl -X POST http://localhost:8787/api/bookings \
+
+curl -sS -w "\nHTTP_STATUS:%{http_code}\n" -X POST https://knna-midterm-campus-booking-2026.quickbite-api.workers.dev/api/bookings \
   -H 'Content-Type: application/json' \
-  -d '{"equipmentId":"eq-1","borrowerName":"Bad User","startAt":"2026-10-20T11:00:00.000Z","endAt":"2026-10-20T10:00:00.000Z","purpose":"Invalid"}'
+  -d '{"equipmentId":"eq-1","borrowerName":"Bad User","startAt":"2026-10-20T12:00:00.000Z","endAt":"2026-10-20T10:00:00.000Z","purpose":"Invalid"}'
 ```
 
 ## Public / remote testing note

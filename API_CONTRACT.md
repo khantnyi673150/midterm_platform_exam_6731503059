@@ -6,6 +6,8 @@ Base URL for remote/public testing: `https://<your-host>/api` or `http://<server
 
 Current deployed public URL: `https://knna-midterm-campus-booking-2026.quickbite-api.workers.dev/api`
 
+For the submission, use the deployed Cloudflare Worker URL above.
+
 ## Equipment
 
 ### `GET /api/equipment`

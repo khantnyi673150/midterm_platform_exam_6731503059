@@ -2,48 +2,49 @@
 
 ## Review focus
 
-After the initial implementation, I checked the work against the midterm quality principles and corrected weak points before final submission.
+I reviewed the project against the midterm quality gate after the main implementation and used the results to improve the API, the tests, and the documentation before submission.
 
-## Finding 1: Validation coverage was incomplete
-
-What I found:
-- The first version needed explicit checks for missing `equipmentId`, invalid time range, and non-existent equipment.
-
-How I fixed it:
-- I added validation before inserting or updating a booking, including `equipmentId` existence checks and `startAt < endAt` enforcement.
-
-Evidence:
-- `curl -X POST http://localhost:8787/api/bookings -H 'Content-Type: application/json' -d '{"equipmentId":"eq-9","borrowerName":"Bad","startAt":"2026-10-20T09:00:00.000Z","endAt":"2026-10-20T10:00:00.000Z","purpose":"Test"}'`
-- Result: `400` with `{ "error": "equipmentId does not exist" }`
-
-## Finding 2: Overlap detection needed reliability checks
+## Finding 1: Reliability — update handling needed to be safe
 
 What I found:
-- A booking could conflict with an existing reservation if the intervals overlapped, so I needed a precise time comparison.
+- The `PATCH /api/bookings/:id` flow had to be checked carefully so it would not conflict with the booking being updated.
 
 How I fixed it:
-- I implemented overlap detection using timestamp comparisons against the same equipment only, while excluding the current booking during updates.
+- I updated the booking overlap logic to exclude the current record during updates and verified the flow against the live API.
 
 Evidence:
-- Two requests for `eq-1` created at `09:00-11:00` and `10:30-12:00`.
-- Result: second request returned `409` with `{ "error": "Booking time conflicts with an existing booking for this equipment" }`
+- Updated booking request returned `200`.
+- Follow-up delete returned `204`, confirming the record was updated correctly and remained addressable.
 
-## Finding 3: Error responses and resource handling needed consistency
+## Finding 2: Accuracy — the public deployment needed persistent storage
 
 What I found:
-- Missing booking IDs and invalid routes should return standardized JSON errors and correct HTTP status codes.
+- The public Worker had to keep bookings across requests, so an in-memory-only approach was not enough.
 
 How I fixed it:
-- I added explicit `404` handling for missing bookings and a default route-not-found response. I also standardized `PATCH/DELETE` error handling.
+- I moved the deployed Worker to Cloudflare D1 and verified that list, create, conflict, update, and delete requests worked against the live URL.
 
 Evidence:
-- `curl http://localhost:8787/api/bookings/does-not-exist`
-- Result: `404` with `{ "error": "Booking not found" }`
+- `GET /api/equipment` returned `200`.
+- `POST /api/bookings` returned `201`.
+- `POST /api/bookings` with overlap returned `409`.
+
+## Finding 3: Reasoning / You Own It — the submission instructions needed to be explicit
+
+What I found:
+- The contract and README needed a single, clear public URL and a better testing checklist so the reviewer could follow the exact submission path.
+
+How I fixed it:
+- I added the final deployed Worker URL to `API_CONTRACT.md` and expanded the README with a public test table and sample commands.
+
+Evidence:
+- `API_CONTRACT.md` now includes `https://knna-midterm-campus-booking-2026.quickbite-api.workers.dev/api`.
+- `README.md` now includes a public test checklist and copy-paste curl examples.
 
 ## Reliability / Accuracy
 
-I verified the implementation by running direct terminal tests, not only by reading code. This included checking normal success responses, validation failures, conflicts, and not-found cases.
+I verified the API by testing the live deployed URL, not only by reading the code. I checked success paths and error paths, including `201`, `200`, `204`, `400`, `404`, and `409`.
 
 ## Reasoning / You Own It
 
-I traced each business rule back to the task brief and checked that the final code matched the contract. I can explain why each status code is used and why parameterized SQL is required for safe database access.
+I can explain why each route exists, why `400`/`404`/`409` are used, how the overlap check works, and why the deployed Worker uses D1 instead of local-only storage.
